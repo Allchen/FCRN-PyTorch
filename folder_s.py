@@ -1,11 +1,12 @@
+'''
+Modified Dataset class from PyTorch
+'''
+import os
+import os.path
+from PIL import Image
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
-
-from PIL import Image
-import os
-import os.path
-import cv2
 import numpy as np
 
 IMG_EXTENSIONS = [
@@ -14,27 +15,14 @@ IMG_EXTENSIONS = [
 ]
 
 
-def valid_dir(dir_name):
-    if not os.path.exists(dir_name):
-        cmd = 'mkdir -p ' + dir_name
-        try:
-            os.system(cmd)
-        except IOError:
-            cmd = 'sudo ' + cmd
-            os.system(cmd)
-    if not dir_name.endswith('/'):
-        dir_name += '/'
-    return dir_name
-
-
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
 
 def find_classes(dir):
     classes = [
-            d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))
-            ]
+        d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))
+        ]
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx
@@ -278,25 +266,21 @@ class NYUDFolder(data.Dataset):
     def __getitem__(self, index=0):
         # load rgbd images
         path = self.imgs[index]
+        img = self.loader(path)
         if self.transform is not None:
-            img = self.transform(self.loader(path))
-        #tot = transforms.ToTensor()
-        #img_o = tot(self.loader(path))
-        img_o = cv2.imread(path)
+            img_o = transforms.ToTensor()(img)
+            img = self.transform(img)
 
         # load depth map
-        path_depth = self.root_depth + str(int(path[len(path)-9:len(path)-4])) + '.npy'
+        path_depth = self.root_depth + str(int(path[len(path)-9:len(path)-4]))
+        path_depth += '.npy'
         depth = np.load(path_depth)
-        if not depth.shape == (480, 640):
-            err = 'Error: wrong shape in file: ' + path_depth
-            print(err)
-            assert 0
+
         depth = torch.from_numpy(depth).float()
         depth = depth.mul(0.1)
-        depth_map = torch.ones(1, depth.shape[0], depth.shape[1])
-        depth_map[0, :, :] = depth
+        depth = depth.unsqueeze(0)
 
-        return img_o, img, depth_map
+        return img_o, img, depth
 
     def __len__(self):
         return len(self.imgs)

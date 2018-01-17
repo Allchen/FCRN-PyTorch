@@ -1,3 +1,7 @@
+'''
+Implementation of upsampling blocks:
+UnPool2d, UpConv2d, UpProjection2d
+'''
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -22,9 +26,16 @@ class UnPool2d(nn.Module):
         inputs = inputs[0]
         in_batches = inputs.size()[0]
         in_channels = inputs.size()[1]
-        inputs = inputs.view(in_batches * in_channels, 1, inputs.size()[2], inputs.size()[3])
-        inputs = torch.nn.functional.conv_transpose2d(inputs, self.kernel, stride=2)
-        inputs = inputs.view(in_batches, in_channels, inputs.size()[2], inputs.size()[3])
+        inputs = inputs.view(
+            in_batches * in_channels,
+            1, inputs.size()[2], inputs.size()[3]
+            )
+        inputs = torch.nn.functional.conv_transpose2d(
+            inputs, self.kernel, stride=2
+            )
+        inputs = inputs.view(
+            in_batches, in_channels, inputs.size()[2], inputs.size()[3]
+            )
         return inputs
 
 
@@ -34,39 +45,42 @@ class UpConv2d(nn.Module):
     '''
     def __init__(self, in_channels, out_channels):
         super(UpConv2d, self).__init__()
-        self.unconv = UnPool2d()
-        self.conv = nn.Conv2d(in_channels, out_channels, 5, padding=2)
+        self.unpool = UnPool2d()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, 5, padding=2),
+            nn.ReLU(inplace=True),
+            )
         return
 
     def forward(self, *inputs):
         inputs = inputs[0]
-        inputs = self.unconv(inputs)
+        inputs = self.unpool(inputs)
         inputs = self.conv(inputs)
         return inputs
 
 
-def test():
+class UpProjection2d(nn.Module):
     '''
-    Fuck
+    Up-Porjection Layer
     '''
-    x = torch.Tensor(1, 3, 12, 12)
-    x = Variable(x)
+    def __init__(self, in_channels, out_channels):
+        super(UpProjection2d, self).__init__()
+        self.unpool = UnPool2d()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, 5, padding=2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, 3, padding=1)
+            )
+        self.conv_projection = nn.Conv2d(
+            in_channels, out_channels, 5, padding=2
+            )
+        self.relu = nn.ReLU(inplace=True)
+        return
 
-    print('\nTesting UnConv2d Layer:\n')
-    print(x.size())
-    u = UnPool2d()
-    y = u(x)
-    print(y.size())
-
-    print('\nTesting UnConv2d Layer:\n')
-    print(x.size())
-    u = UpConv2d(3, 64)
-    y = u(x)
-    print(y.size())
-
-    print('\nEnd Test')
-    return
-
-
-if __name__ == '__main__':
-    test()
+    def forward(self, *inputs):
+        inputs = inputs[0]
+        inputs = self.unpool(inputs)
+        inputs_0 = self.conv(inputs)
+        inputs_1 = self.conv_projection(inputs)
+        inputs = self.relu(inputs_0 + inputs_1)
+        return inputs
