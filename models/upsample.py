@@ -19,10 +19,9 @@ class UnPool2d(nn.Module):
         kernel = kernel.unsqueeze(0)
         kernel = kernel.unsqueeze(0)
         if use_gpu:
-            self.kernel = Variable(data=kernel, requires_grad=False).cuda()
+            self.kernel = Variable(data=kernel).cuda()
         else:
-            self.kernel = Variable(data=kernel, requires_grad=False)
-        self.requires_grad = False
+            self.kernel = Variable(data=kernel)
         return
 
     def forward(self, inputs):
