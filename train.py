@@ -1,8 +1,9 @@
 '''
 Main function
 '''
-import path
+import os
 import argparse
+import path
 
 import torch
 import visdom
@@ -14,8 +15,32 @@ import models.FCRN as FCRN
 import models.upsample as upsample
 
 
-def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0, learning_rate=1e-3):
-    print('FCRN\nInitializing...')
+def main(
+        use_gpu=True, batch_size=32, epoch_num=20,
+        start_epoch=0, learning_rate=1e-3,
+        load_checkpoint=None, load_file=None
+        ):
+    print('FCRN')
+    if use_gpu and not torch.cuda.is_available():
+        print('Cannot use GPU')
+        use_gpu = False
+    if load_checkpoint is not None:
+        print('Loading checkpoint from epoch {0:d}'.format(load_checkpoint))
+        load_ready = False
+        if load_file is not None:
+            msg = 'File ' + load_file + ' will not be loaded.'
+            print(msg)
+        load_path = 'parameters/FCRN_e{0:d}.pth'.format(load_checkpoint)
+        if os.path.exists(load_path):
+            start_epoch = load_checkpoint
+            load_checkpoint = True
+        else:
+            msg = 'Unable to load file ' + load_path + ': file not exists.'
+            print(msg)
+    elif load_file is not None:
+        #TODO: load parameters from file
+        print('Unsupported feature.')
+        assert 0
 
     vis = visdom.Visdom()
     win_rgb = vis.image(torch.zeros(240, 320), opts=dict(title='GT'), env='FCRN')
@@ -24,8 +49,11 @@ def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0, learning_rate
     win_Training_Loss = vis.image(torch.zeros(3, 450, 450), opts=dict(title='Refinement loss'), env='FCRN')
     win_Epoch_Loss = vis.image(torch.zeros(3, 450, 450), opts=dict(title='Refinement loss'), env='FCRN')
 
-    train_data_loader = nyud_dataset.get_nyud_train_set((304, 228), 1)
+    print('Initializing network...')
+    train_data_loader = nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
     fcrn = FCRN.FCRN(up_conv=upsample.UpProjection2d, use_gpu=use_gpu)
+    if load_checkpoint is not None and load_ready:
+        fcrn.load_state_dict(torch.load(load_path))
     optimizer = torch.optim.Adam(
         fcrn.parameters(),
         lr=learning_rate,
@@ -62,7 +90,7 @@ def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0, learning_rate
             #print('e{0:d}_b{1:d}: loss={2:f}'.format(epoch_i, batch_i, loss))
 
             training_losses.append(loss)
-            if len(training_losses) > 3000:
+            if len(training_losses) > len(train_data_iter):
                 training_losses = training_losses[1:]
             vis.image(
                 inputs_o[0, :, :, :].cpu(), opts=dict(title='RGB'),
@@ -89,7 +117,7 @@ def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0, learning_rate
             opts=dict(title='Epoch Loss'), env='FCRN',
             win=win_Epoch_Loss
             )
-        torch.save(fcrn.state_dict(), 'parameters/FCRN_epoch{0:d}.pth'.format(epoch_i))
+        torch.save(fcrn.state_dict(), 'parameters/FCRN_e{0:d}.pth'.format(epoch_i))
     return
 
 
@@ -110,11 +138,19 @@ if __name__ == '__main__':
     configures.add_argument(
         '--learning_rate', required=False, type=float, default=1e-3
         )
+    configures.add_argument(
+        '--load_checkpoint', required=False, type=int, default=None
+        )
+    configures.add_argument(
+        '--load_file', required=False, type=str, default=None
+        )
     configures = configures.parse_args()
 
     main(
         use_gpu=configures.cuda, batch_size=configures.batch_size,
         epoch_num=configures.epoch_num,
         start_epoch=configures.start_epoch,
-        learning_rate=configures.learning_rate
+        learning_rate=configures.learning_rate,
+        load_checkpoint=configures.load_checkpoint,
+        load_file=configures.load_file
         )
