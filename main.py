@@ -9,13 +9,13 @@ import visdom
 import numpy as np
 from torch.autograd import Variable
 
-import Berhu
 import nyud_dataset
 import models.FCRN as FCRN
 import models.upsample as upsample
 
 
 def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0):
+    print('FCRN\nInitializing...')
     vis = visdom.Visdom()
     win_RGB = vis.image(torch.ones(480, 640), opts=dict(title='GT'), env='FCRN')
     win_Depth = vis.image(torch.ones(256, 256), opts=dict(title='DG'), env='FCRN')
@@ -23,11 +23,20 @@ def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0):
     win_Loss = vis.image(torch.ones(3, 450, 450), opts=dict(title='Refinement loss'), env='FCRN')
 
     train_data_loader = nyud_dataset.get_nyud_train_set((304, 228), 1)
-    fcrn = FCRN.FCRN(up_conv=upsample.UpProjection2d)
+    fcrn = FCRN.FCRN(up_conv=upsample.UpProjection2d, use_gpu=use_gpu)
+    '''
+    if use_gpu:
+        fcrn = fcrn.cuda()
     optimizer = torch.optim.SGD(
         fcrn.parameters(),
-        lr=1e-2,
+        lr=1e-3,
         momentum=0.9
+        )
+    '''
+    optimizer = torch.optim.Adam(
+        fcrn.parameters(),
+        lr=1e-4,
+        betas=(0.5, 0.999)
         )
     #loss_function = Berhu.BerhuLoss()
     loss_function = torch.nn.L1Loss()
@@ -43,6 +52,10 @@ def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0):
             gts = torch.nn.functional.upsample(
                 gts, size=(128, 160), mode='bilinear'
                 )
+            if use_gpu:
+                inputs = inputs.cuda()
+                gts = gts.cuda()
+
             outputs = fcrn(inputs)
 
             loss = loss_function(outputs, gts)
@@ -53,15 +66,15 @@ def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0):
 
             training_loss.append(loss)
             vis.image(
-                inputs_o[0, :, :, :], opts=dict(title='RGB'),
+                inputs_o[0, :, :, :].cpu(), opts=dict(title='RGB'),
                 env='FCRN', win=win_RGB
                 )
             vis.image(
-                gts.data[0, :, :, :], opts=dict(title='Depth'),
+                gts.data[0, :, :, :].cpu(), opts=dict(title='Depth'),
                 env='FCRN', win=win_Depth
                 )
             vis.image(
-                outputs.data[0, :, :, :], opts=dict(title='Prediction'),
+                outputs.data[0, :, :, :].cpu(), opts=dict(title='Prediction'),
                 env='FCRN', win=win_Pred
                 )
             vis.line(
@@ -69,6 +82,7 @@ def main(use_gpu=True, batch_size=32, epoch_num=20, start_epoch=0):
                 opts=dict(title='Training Loss'), env='FCRN',
                 win=win_Loss
                 )
+    torch.save(fcrn.state_dict(), 'parameters/fcrn.pth')
     return
 
 

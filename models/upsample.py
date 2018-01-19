@@ -13,17 +13,19 @@ class UnPool2d(nn.Module):
     A. Dosovitskiy, J. Tobias Springberg, and T.Brox.
     <Learning to generate chairs with convolutional neural networks>
     '''
-    def __init__(self):
+    def __init__(self, use_gpu=False):
         super(UnPool2d, self).__init__()
         kernel = torch.FloatTensor([[1, 0], [0, 0]])
         kernel = kernel.unsqueeze(0)
         kernel = kernel.unsqueeze(0)
-        self.kernel = Variable(data=kernel, requires_grad=False)
+        if use_gpu:
+            self.kernel = Variable(data=kernel, requires_grad=False).cuda()
+        else:
+            self.kernel = Variable(data=kernel, requires_grad=False)
         self.requires_grad = False
         return
 
-    def forward(self, *inputs):
-        inputs = inputs[0]
+    def forward(self, inputs):
         in_batches = inputs.size()[0]
         in_channels = inputs.size()[1]
         inputs = inputs.view(
@@ -43,9 +45,9 @@ class UpConv2d(nn.Module):
     '''
     Up-convolution Layer
     '''
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, use_gpu=False):
         super(UpConv2d, self).__init__()
-        self.unpool = UnPool2d()
+        self.unpool = UnPool2d(use_gpu)
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, 5, padding=2),
             nn.ReLU(inplace=True),
@@ -63,9 +65,9 @@ class UpProjection2d(nn.Module):
     '''
     Up-Porjection Layer
     '''
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, use_gpu=False):
         super(UpProjection2d, self).__init__()
-        self.unpool = UnPool2d()
+        self.unpool = UnPool2d(use_gpu)
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, 5, padding=2),
             nn.ReLU(inplace=True),
@@ -77,8 +79,7 @@ class UpProjection2d(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         return
 
-    def forward(self, *inputs):
-        inputs = inputs[0]
+    def forward(self, inputs):
         inputs = self.unpool(inputs)
         inputs_0 = self.conv(inputs)
         inputs_1 = self.conv_projection(inputs)

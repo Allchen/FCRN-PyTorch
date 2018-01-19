@@ -48,6 +48,6 @@ def get_nyud_test_set(image_size=(256, 256)):
         test_set,
         batch_size=1,
         shuffle=False,
-        num_workers=4
+        num_workers=0
         )
     return test_set_loader
