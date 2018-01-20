@@ -30,30 +30,47 @@ def main(
         if load_file is not None:
             msg = 'File ' + load_file + ' will not be loaded.'
             print(msg)
-        load_path = 'parameters/FCRN_e{0:d}.pth'.format(load_checkpoint)
+        load_path = \
+            'cache/network_parameters/FCRN_e{0:d}.pth'.format(load_checkpoint)
         if os.path.exists(load_path):
             start_epoch = load_checkpoint
-            load_checkpoint = True
+            load_ready = True
         else:
             msg = 'Unable to load file ' + load_path + ': file not exists.'
             print(msg)
+            return False
     elif load_file is not None:
-        #TODO: load parameters from file
+        # TODO: load parameters from file
         print('Unsupported feature.')
         assert 0
 
     vis = visdom.Visdom()
-    win_rgb = vis.image(torch.zeros(240, 320), opts=dict(title='GT'), env='FCRN')
-    win_Depth = vis.image(torch.zeros(240, 320), opts=dict(title='DG'), env='FCRN')
-    win_Pred = vis.image(torch.zeros(240, 320), opts=dict(title='Predicted'), env='FCRN')
-    win_Training_Loss = vis.image(torch.zeros(3, 450, 450), opts=dict(title='Refinement loss'), env='FCRN')
-    win_Epoch_Loss = vis.image(torch.zeros(3, 450, 450), opts=dict(title='Refinement loss'), env='FCRN')
+    win_rgb = vis.image(
+        torch.zeros(240, 320), opts=dict(title='GT'), env='FCRN'
+        )
+    win_Depth = vis.image(
+        torch.zeros(240, 320), opts=dict(title='DG'), env='FCRN'
+        )
+    win_Pred = vis.image(
+        torch.zeros(240, 320), opts=dict(title='Predicted'), env='FCRN'
+        )
+    win_Training_Loss = vis.image(
+        torch.zeros(3, 450, 450), opts=dict(title='Refinement loss'),
+        env='FCRN'
+        )
+    win_Epoch_Loss = vis.image(
+        torch.zeros(3, 450, 450), opts=dict(title='Refinement loss'),
+        env='FCRN'
+        )
 
     print('Initializing network...')
-    train_data_loader = nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
+    train_data_loader = \
+        nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
     fcrn = FCRN.FCRN(up_conv=upsample.UpProjection2d, use_gpu=use_gpu)
     if load_checkpoint is not None and load_ready:
         fcrn.load_state_dict(torch.load(load_path))
+        msg = 'Successfully loaded parameter from ' + load_path
+        print(msg)
     optimizer = torch.optim.Adam(
         fcrn.parameters(),
         lr=learning_rate,
@@ -63,6 +80,8 @@ def main(
     if use_gpu:
         loss_function = loss_function.cuda()
 
+    if not os.path.exists('cache/network_parameters/'):
+        os.system('mkdir -p cache/network_parameters/')
     training_losses = []
     epoch_losses = []
     for epoch_i in range(start_epoch, start_epoch+epoch_num):
@@ -87,7 +106,6 @@ def main(
             optimizer.step()
             loss = loss.cpu().data[0]
             epoch_loss += loss
-            #print('e{0:d}_b{1:d}: loss={2:f}'.format(epoch_i, batch_i, loss))
 
             training_losses.append(loss)
             if len(training_losses) > len(train_data_iter):
@@ -117,14 +135,20 @@ def main(
             opts=dict(title='Epoch Loss'), env='FCRN',
             win=win_Epoch_Loss
             )
-        torch.save(fcrn.state_dict(), 'parameters/FCRN_e{0:d}.pth'.format(epoch_i))
-    return
+        torch.save(fcrn.state_dict(),
+                   'cache/network_parameters/FCRN_e{0:d}.pth'.format(epoch_i))
+
+    epoch_losses_file = open('cache/epoch_losses.txt', 'w')
+    epoch_losses_file.write(str(epoch_losses))
+    epoch_losses_file.close()
+
+    return True
 
 
 if __name__ == '__main__':
     configures = argparse.ArgumentParser()
     configures.add_argument(
-        '--cuda', required=False, default=False, action='store_true'
+        '--cuda', required=False, default=True, action='store_true'
         )
     configures.add_argument(
         '--batch_size', required=False, type=int, default=16
@@ -136,7 +160,7 @@ if __name__ == '__main__':
         '--start_epoch', required=False, type=int, default=0
         )
     configures.add_argument(
-        '--learning_rate', required=False, type=float, default=1e-3
+        '--learning_rate', required=False, type=float, default=1e-4
         )
     configures.add_argument(
         '--load_checkpoint', required=False, type=int, default=None
