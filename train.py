@@ -1,6 +1,3 @@
-'''
-Main function
-'''
 import os
 import argparse
 import path
@@ -69,8 +66,6 @@ def main(
         )
 
     print('Initializing network...')
-    train_data_loader = \
-        nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
     fcrn = FCRN.FCRN(up_conv=upsample.UpProjection2d, use_gpu=use_gpu)
     optimizer = torch.optim.Adam(
         fcrn.parameters(),
@@ -91,6 +86,8 @@ def main(
     training_losses = []
     epoch_losses = []
     for epoch_i in range(start_epoch, start_epoch+epoch_num):
+        train_data_loader = \
+            nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
         train_data_iter = iter(train_data_loader)
         epoch_loss = 0
         for batch_i in range(len(train_data_iter)):
@@ -165,7 +162,7 @@ if __name__ == '__main__':
         '--batch_size', required=False, type=int, default=16
         )
     configures.add_argument(
-        '--epoch_num', required=False, type=int, default=20
+        '--epoch_num', required=False, type=int, default=100
         )
     configures.add_argument(
         '--start_epoch', required=False, type=int, default=0

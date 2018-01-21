@@ -36,6 +36,7 @@ class RGBDFolder(data.Dataset):
             root_depth,
             transform_rgb=None,
             transform_depth=None,
+            transform_mutual=None,
             loader_rgb=data_loader.pil_loader,
             loader_depth=data_loader.torch_tensor_loader
     ):
@@ -57,6 +58,7 @@ class RGBDFolder(data.Dataset):
 
         self.transform_rgb = transform_rgb
         self.transform_depth = transform_depth
+        self.transform_mutual = transform_mutual
 
         self.loader_rgb = loader_rgb
         self.loader_depth = loader_depth
@@ -75,7 +77,10 @@ class RGBDFolder(data.Dataset):
 
         # perform transforms on original rgb image
         if self.transform_rgb is not None:
-            img = self.transform_rgb(img)
+            if self.transform_mutual is not None:
+                img = self.transform_rgb(img, self.transform_mutual)
+            else:
+                img = self.transform_rgb(img)
 
         # load depth map and perform transforms on it
         path_depth = self.root_depth
@@ -83,7 +88,10 @@ class RGBDFolder(data.Dataset):
         path_depth += '.pth'
         depth = self.loader_depth(path_depth)
         if self.transform_depth is not None:
-            depth = self.transform_depth(depth)
+            if self.transform_mutual is not None:
+                depth = self.transform_depth(depth, self.transform_mutual)
+            else:
+                depth = self.transform_depth(depth)
 
         return img_display, img, depth
 
