@@ -32,8 +32,8 @@ def main(
             'cache/network/FCRN_e{0:d}.pth'.format(load_checkpoint)
         load_optimizer_path = \
             'cache/optimizer/optimizer_e{0:d}.pth'.format(load_checkpoint)
-        if os.path.exists(load_network_path)
-        and os.path.exists(load_optimizer_path):
+        if os.path.exists(load_network_path)\
+           and os.path.exists(load_optimizer_path):
             start_epoch = load_checkpoint
             load_ready = True
         else:
@@ -159,7 +159,7 @@ def main(
 if __name__ == '__main__':
     configures = argparse.ArgumentParser()
     configures.add_argument(
-        '--cuda', required=False, default=True, action='store_true'
+        '--cuda', required=False, action='store_true'
         )
     configures.add_argument(
         '--batch_size', required=False, type=int, default=16
