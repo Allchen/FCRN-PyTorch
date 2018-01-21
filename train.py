@@ -135,8 +135,10 @@ def main(
             opts=dict(title='Epoch Loss'), env='FCRN',
             win=win_Epoch_Loss
             )
-        torch.save(fcrn.state_dict(),
-                   'cache/network_parameters/FCRN_e{0:d}.pth'.format(epoch_i))
+        if epoch_i % 10 == 0:
+            save_path = 'cache/network_parameters/'
+            save_path += 'FCRN_e{0:d}.pth'.format(epoch_i)
+            torch.save(fcrn.state_dict(), save_path)
 
     epoch_losses_file = open('cache/epoch_losses.txt', 'w')
     epoch_losses_file.write(str(epoch_losses))
