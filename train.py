@@ -24,19 +24,24 @@ def main(
     if use_gpu and not torch.cuda.is_available():
         print('Cannot use GPU')
         use_gpu = False
+
     if load_checkpoint is not None:
         print('Loading checkpoint from epoch {0:d}'.format(load_checkpoint))
         load_ready = False
-        if load_file is not None:
-            msg = 'File ' + load_file + ' will not be loaded.'
-            print(msg)
-        load_path = \
-            'cache/network_parameters/FCRN_e{0:d}.pth'.format(load_checkpoint)
-        if os.path.exists(load_path):
+        load_network_path = \
+            'cache/network/FCRN_e{0:d}.pth'.format(load_checkpoint)
+        load_optimizer_path = \
+            'cache/optimizer/optimizer_e{0:d}.pth'.format(load_checkpoint)
+        if os.path.exists(load_network_path)
+        and os.path.exists(load_optimizer_path):
             start_epoch = load_checkpoint
             load_ready = True
         else:
-            msg = 'Unable to load file ' + load_path + ': file not exists.'
+            msg = 'Unable to load files:\n'
+            if not os.path.exists(load_network_path):
+                msg += load_network_path
+            if not os.path.exists(load_optimizer_path):
+                msg += load_optimizer_path
             print(msg)
             return False
     elif load_file is not None:
@@ -67,21 +72,22 @@ def main(
     train_data_loader = \
         nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
     fcrn = FCRN.FCRN(up_conv=upsample.UpProjection2d, use_gpu=use_gpu)
-    if load_checkpoint is not None and load_ready:
-        fcrn.load_state_dict(torch.load(load_path))
-        msg = 'Successfully loaded parameter from ' + load_path
-        print(msg)
     optimizer = torch.optim.Adam(
         fcrn.parameters(),
         lr=learning_rate,
         betas=(0.5, 0.999)
         )
+    if load_checkpoint is not None and load_ready:
+        fcrn.load_state_dict(torch.load(load_network_path))
+        optimizer.load_state_dict(torch.load(load_optimizer_path))
+        msg = 'Successfully loaded parameter from '
+        msg += 'checkpoint {0:d}'.format(load_checkpoint)
+        print(msg)
     loss_function = torch.nn.MSELoss()
     if use_gpu:
         loss_function = loss_function.cuda()
 
-    if not os.path.exists('cache/network_parameters/'):
-        os.system('mkdir -p cache/network_parameters/')
+    os.system('mkdir -p cache/network/ cache/optimizer/')
     training_losses = []
     epoch_losses = []
     for epoch_i in range(start_epoch, start_epoch+epoch_num):
@@ -136,9 +142,12 @@ def main(
             win=win_Epoch_Loss
             )
         if epoch_i % 10 == 0:
-            save_path = 'cache/network_parameters/'
+            save_path = 'cache/network/'
             save_path += 'FCRN_e{0:d}.pth'.format(epoch_i)
             torch.save(fcrn.state_dict(), save_path)
+            save_path = 'cache/optimizer/'
+            save_path += 'optimizer_e{0:d}.pth'.format(epoch_i)
+            torch.save(optimizer.state_dict(), save_path)
 
     epoch_losses_file = open('cache/epoch_losses.txt', 'w')
     epoch_losses_file.write(str(epoch_losses))
