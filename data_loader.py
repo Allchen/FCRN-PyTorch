@@ -10,6 +10,18 @@ def pil_loader(path):
             return img.convert('RGB')
 
 
+def opencv_loader(path, gray=False):
+    if not os.path.exists(path):
+        return None
+    import cv2
+    import numpy as np
+    if not gray:
+        img = cv2.imread(path).astype(np.float32)
+    else:
+        img = cv2.imread(path, 0).astype(np.float32)
+    return img
+
+
 def numpy_loader(path):
     if not os.path.exists(path):
         return None

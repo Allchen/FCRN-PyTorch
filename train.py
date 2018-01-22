@@ -87,7 +87,7 @@ def main(
     epoch_losses = []
     for epoch_i in range(start_epoch, start_epoch+epoch_num):
         train_data_loader = \
-            nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
+            nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size, data_augmentation=False)
         train_data_iter = iter(train_data_loader)
         epoch_loss = 0
         for batch_i in range(len(train_data_iter)):

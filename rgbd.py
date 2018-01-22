@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
@@ -70,10 +71,7 @@ class RGBDFolder(data.Dataset):
         img = self.loader_rgb(path_rgb)
 
         # return original image for visualization
-        if self.loader_rgb == data_loader.pil_loader:
-            img_display = transforms.ToTensor()(img)
-        else:
-            img_display = None
+        img_display = torch.from_numpy(np.transpose(img, [2, 0, 1]))
 
         # perform transforms on original rgb image
         if self.transform_rgb is not None:
