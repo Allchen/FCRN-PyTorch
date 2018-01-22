@@ -22,9 +22,9 @@ def main(
         print('Cannot use GPU')
         use_gpu = False
 
+    load_ready = False
     if load_checkpoint is not None:
         print('Loading checkpoint from epoch {0:d}'.format(load_checkpoint))
-        load_ready = False
         load_network_path = \
             'cache/network/FCRN_e{0:d}.pth'.format(load_checkpoint)
         load_optimizer_path = \
@@ -41,10 +41,21 @@ def main(
                 msg += load_optimizer_path
             print(msg)
             return False
+
     elif load_file is not None:
-        # TODO: load parameters from file
-        print('Unsupported feature.')
-        assert 0
+        load_network_path = load_file[0]
+        load_optimizer_path = load_file[1]
+        if os.path.exists(load_network_path)\
+           and os.path.exists(load_optimizer_path):
+            load_ready = True
+        else:
+            msg = 'Unable to load files:\n'
+            if not os.path.exists(load_network_path):
+                msg += load_network_path
+            if not os.path.exists(load_optimizer_path):
+                msg += load_optimizer_path
+            print(msg)
+            return False
 
     vis = visdom.Visdom()
     win_rgb = vis.image(
@@ -72,7 +83,7 @@ def main(
         lr=learning_rate,
         betas=(0.5, 0.999)
         )
-    if load_checkpoint is not None and load_ready:
+    if load_ready:
         fcrn.load_state_dict(torch.load(load_network_path))
         optimizer.load_state_dict(torch.load(load_optimizer_path))
         msg = 'Successfully loaded parameter from '
@@ -165,9 +176,6 @@ if __name__ == '__main__':
         '--epoch_num', required=False, type=int, default=100
         )
     configures.add_argument(
-        '--start_epoch', required=False, type=int, default=0
-        )
-    configures.add_argument(
         '--learning_rate', required=False, type=float, default=1e-4
         )
     configures.add_argument(
@@ -175,6 +183,9 @@ if __name__ == '__main__':
         )
     configures.add_argument(
         '--load_file', required=False, type=str, default=None
+        )
+    configures.add_argument(
+        '--start_epoch', required=False, type=int, default=0
         )
     configures = configures.parse_args()
 
