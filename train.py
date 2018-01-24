@@ -5,6 +5,7 @@ import path
 import torch
 import visdom
 import numpy as np
+from tqdm import tqdm
 from torch.autograd import Variable
 
 import nyud_dataset
@@ -96,12 +97,13 @@ def main(
     os.system('mkdir -p cache/network/ cache/optimizer/')
     training_losses = []
     epoch_losses = []
-    for epoch_i in range(start_epoch, start_epoch+epoch_num):
+    #for epoch_i in range(start_epoch, start_epoch+epoch_num):
+    for epoch_i in tqdm(range(start_epoch, start_epoch+epoch_num)):
         train_data_loader = \
-            nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size, data_augmentation=False)
+            nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
         train_data_iter = iter(train_data_loader)
         epoch_loss = 0
-        for batch_i in range(len(train_data_iter)):
+        for batch_i in tqdm(range(len(train_data_iter))):
             data = train_data_iter.next()
             inputs_o, inputs, gts = data
             inputs = Variable(inputs)
@@ -143,7 +145,7 @@ def main(
                 )
         epoch_loss /= len(train_data_iter)
         epoch_losses.append(epoch_loss)
-        print('e{0:d} loss={1:f}'.format(epoch_i, epoch_loss))
+        #print('e{0:d} loss={1:f}'.format(epoch_i, epoch_loss))
         vis.line(
             np.array(epoch_losses), np.arange(len(epoch_losses)),
             opts=dict(title='Epoch Loss'), env='FCRN',

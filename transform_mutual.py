@@ -13,12 +13,10 @@ class TransformMutual:
         rescale = random.rand() * (rescale_range[1]
                                    - rescale_range[0]) + rescale_range[0]
         rotate = ((random.rand() * 2 - 1) * rotate_degree + 360) % 360
-        #translation_x1 = random.rand() * (img_size[0] - output_size[0])
-        #translation_y1 = random.rand() * (img_size[1] - output_size[1])
-        translation_x1 = int(1 * (img_size[0] - output_size[0]))
-        translation_y1 = int(1 * (img_size[1] - output_size[1]))
-        translation_x2 = int(translation_x1 + output_size[0])
-        translation_y2 = int(translation_y1 + output_size[1])
+        translation_x1 = int(img_size[0] * (rescale - 1) * random.rand())
+        translation_y1 = int(img_size[1] * (rescale - 1) * random.rand())
+        translation_x2 = int(translation_x1 + img_size[0])
+        translation_y2 = int(translation_y1 + img_size[1])
 
         self.flip = flip
         self.rescale = rescale
@@ -27,4 +25,5 @@ class TransformMutual:
         self.translation_x2 = translation_x2
         self.translation_y1 = translation_y1
         self.translation_y2 = translation_y2
+        self.output_size = output_size
         return

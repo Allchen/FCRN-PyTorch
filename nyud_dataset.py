@@ -50,7 +50,7 @@ def get_nyud_train_set(image_size=(480, 640), batch_size=16,
         train_set,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=4
+        num_workers=0
         )
     return train_set_loader
 

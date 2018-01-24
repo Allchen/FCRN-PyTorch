@@ -22,6 +22,11 @@ def transform_rgb(rgb, mutual):
                     mutual.translation_x2,
                     mutual.translation_y2,
                     )
+    rgb = cv2.resize(
+        rgb, (mutual.output_size[0], mutual.output_size[1]),
+        rgb, 0, 0,
+        interpolation=cv2.INTER_LINEAR
+        )
 
     # Convert OpenCV image into PyTorch Tensor
     rgb = np.transpose(rgb, [2, 0, 1])
@@ -56,6 +61,11 @@ def transform_depth(depth, mutual):
                     mutual.translation_x2,
                     mutual.translation_y2,
                     )
+    depth = cv2.resize(
+        depth, (mutual.output_size[0], mutual.output_size[1]),
+        depth, 0, 0,
+        interpolation=cv2.INTER_LINEAR
+        )
 
     # Convert depth map into PyTorch Tensor
     depth = torch.from_numpy(depth)

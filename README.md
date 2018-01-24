@@ -1,14 +1,15 @@
 # FCRN-PyTorch
 PyTorch implementation of Fully Convolutional Residual Networks(FCRN).
 The paper can be found [here](https://arxiv.org/pdf/1606.00373.pdf)
-![](Network.png)
+![](Network.png)  
 
-##Usage
-###Training
+
+## Usage
+### Training
 ``
 python train.py --arg=parameter
 ``
-#####Args:
+##### Args:
 --cuda
 use GPU to train
 
