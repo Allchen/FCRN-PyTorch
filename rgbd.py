@@ -70,14 +70,12 @@ class RGBDFolder(data.Dataset):
         path_rgb = self.imgs[index]
         img = self.loader_rgb(path_rgb)
 
-        # return original image for visualization
-        img_display = torch.from_numpy(np.transpose(img, [2, 0, 1]))
-
         # perform transforms on original rgb image
         if self.transform_rgb is not None:
             if self.transform_mutual is not None:
-                img = self.transform_rgb(img, self.transform_mutual)
+                img, img_disp = self.transform_rgb(img, self.transform_mutual)
             else:
+                img_disp = torch.from_numpy(np.transpose(img, [2, 0, 1]))
                 img = self.transform_rgb(img)
 
         # load depth map and perform transforms on it
@@ -91,7 +89,7 @@ class RGBDFolder(data.Dataset):
             else:
                 depth = self.transform_depth(depth)
 
-        return img_display, img, depth
+        return img, depth, img_disp
 
     def __len__(self):
         return len(self.imgs)

@@ -21,6 +21,7 @@ def get_nyud_train_set(image_size=(480, 640), batch_size=16,
             transforms.Normalize((0.485, 0.456, 0.406),
                                  (0.229, 0.224, 0.225))
             ])
+
         def transform_depth(depth):
             depth /= 10
             depth = depth.unsqueeze(0)

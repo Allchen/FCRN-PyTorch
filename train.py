@@ -97,15 +97,14 @@ def main(
     os.system('mkdir -p cache/network/ cache/optimizer/')
     training_losses = []
     epoch_losses = []
-    #for epoch_i in range(start_epoch, start_epoch+epoch_num):
     for epoch_i in tqdm(range(start_epoch, start_epoch+epoch_num)):
         train_data_loader = \
-            nyud_dataset.get_nyud_train_set((304, 228), batch_size=batch_size)
+            nyud_dataset.get_nyud_train_set((228, 304), batch_size=batch_size)
         train_data_iter = iter(train_data_loader)
         epoch_loss = 0
         for batch_i in tqdm(range(len(train_data_iter))):
             data = train_data_iter.next()
-            inputs_o, inputs, gts = data
+            inputs, gts, inputs_disp = data
             inputs = Variable(inputs)
             gts = Variable(gts)
             gts = torch.nn.functional.upsample(
@@ -124,10 +123,12 @@ def main(
             epoch_loss += loss
 
             training_losses.append(loss)
+            gts_disp = gts / gts.max()
+            outputs_disp = outputs / outputs.max()
             if len(training_losses) > len(train_data_iter):
                 training_losses = training_losses[1:]
             vis.image(
-                inputs_o[0, :, :, :].cpu(), opts=dict(title='RGB'),
+                inputs_disp[0, :, :, :].cpu(), opts=dict(title='RGB'),
                 env='FCRN', win=win_rgb
                 )
             vis.image(
@@ -145,7 +146,6 @@ def main(
                 )
         epoch_loss /= len(train_data_iter)
         epoch_losses.append(epoch_loss)
-        #print('e{0:d} loss={1:f}'.format(epoch_i, epoch_loss))
         vis.line(
             np.array(epoch_losses), np.arange(len(epoch_losses)),
             opts=dict(title='Epoch Loss'), env='FCRN',
