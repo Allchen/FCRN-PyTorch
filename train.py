@@ -132,11 +132,12 @@ def main(
                 env='FCRN', win=win_rgb
                 )
             vis.image(
-                gts.data[0, :, :, :].cpu(), opts=dict(title='Depth'),
+                gts_disp.data[0, :, :, :].cpu(), opts=dict(title='Depth'),
                 env='FCRN', win=win_Depth
                 )
             vis.image(
-                outputs.data[0, :, :, :].cpu(), opts=dict(title='Prediction'),
+                outputs_disp.data[0, :, :, :].cpu(),
+                opts=dict(title='Prediction'),
                 env='FCRN', win=win_Pred
                 )
             vis.line(
@@ -178,7 +179,7 @@ if __name__ == '__main__':
         '--epoch_num', required=False, type=int, default=100
         )
     configures.add_argument(
-        '--learning_rate', required=False, type=float, default=1e-4
+        '--learning_rate', required=False, type=float, default=1e-3
         )
     configures.add_argument(
         '--load_checkpoint', required=False, type=int, default=None

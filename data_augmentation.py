@@ -52,7 +52,6 @@ def transform_rgb(rgb, mutual):
 
 def transform_depth(depth, mutual):
     depth = depth.numpy()
-    depth = depth / 255
 
     # Perform scale, rotation and flip transformation on OpenCV image.
     if mutual.flip:
