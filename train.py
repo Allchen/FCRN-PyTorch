@@ -179,7 +179,7 @@ if __name__ == '__main__':
         '--epoch_num', required=False, type=int, default=100
         )
     configures.add_argument(
-        '--learning_rate', required=False, type=float, default=1e-3
+        '--learning_rate', required=False, type=float, default=5e-4
         )
     configures.add_argument(
         '--load_checkpoint', required=False, type=int, default=None

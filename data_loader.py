@@ -17,6 +17,7 @@ def opencv_loader(path, gray=False):
     import numpy as np
     if not gray:
         img = cv2.imread(path).astype(np.float32)
+        img[:, :, [0, 2]] = img[:, :, [2, 0]]
     else:
         img = cv2.imread(path, 0).astype(np.float32)
     return img
