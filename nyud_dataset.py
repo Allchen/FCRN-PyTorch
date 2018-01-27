@@ -15,6 +15,7 @@ def get_nyud_train_set(image_size=(480, 640), batch_size=16,
                        data_augmentation=True
                        ):
     if not data_augmentation:
+        image_size = (image_size[1], image_size[0])
         transform_rgb = transforms.Compose([
             transforms.Scale(image_size),
             transforms.ToTensor(),

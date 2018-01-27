@@ -16,7 +16,7 @@ import models.upsample as upsample
 def main(
         use_gpu=True, batch_size=32, epoch_num=20,
         start_epoch=0, learning_rate=1e-3,
-        load_checkpoint=None, load_file=None
+        load_checkpoint=None, load_file=None, save_rate=10
         ):
     print('FCRN')
     if use_gpu and not torch.cuda.is_available():
@@ -99,7 +99,9 @@ def main(
     epoch_losses = []
     for epoch_i in tqdm(range(start_epoch, start_epoch+epoch_num)):
         train_data_loader = \
-            nyud_dataset.get_nyud_train_set((228, 304), batch_size=batch_size)
+            nyud_dataset.get_nyud_train_set(
+                    (228, 304), batch_size=batch_size, data_augmentation=True
+                    )
         train_data_iter = iter(train_data_loader)
         epoch_loss = 0
         for batch_i in tqdm(range(len(train_data_iter))):
@@ -125,7 +127,7 @@ def main(
             training_losses.append(loss)
             gts_disp = gts / gts.max()
             outputs_disp = outputs / outputs.max()
-            if len(training_losses) > len(train_data_iter):
+            if len(training_losses) > 1000:
                 training_losses = training_losses[1:]
             vis.image(
                 inputs_disp[0, :, :, :].cpu(), opts=dict(title='RGB'),
@@ -152,7 +154,7 @@ def main(
             opts=dict(title='Epoch Loss'), env='FCRN',
             win=win_Epoch_Loss
             )
-        if epoch_i % 10 == 0:
+        if epoch_i % save_rate == 0:
             save_path = 'cache/network/'
             save_path += 'FCRN_e{0:d}.pth'.format(epoch_i)
             torch.save(fcrn.state_dict(), save_path)
@@ -176,10 +178,10 @@ if __name__ == '__main__':
         '--batch_size', required=False, type=int, default=16
         )
     configures.add_argument(
-        '--epoch_num', required=False, type=int, default=100
+        '--epoch_num', required=False, type=int, default=500
         )
     configures.add_argument(
-        '--learning_rate', required=False, type=float, default=5e-4
+        '--learning_rate', required=False, type=float, default=1e-4
         )
     configures.add_argument(
         '--load_checkpoint', required=False, type=int, default=None
@@ -190,6 +192,9 @@ if __name__ == '__main__':
     configures.add_argument(
         '--start_epoch', required=False, type=int, default=0
         )
+    configures.add_argument(
+        '--save_rate', required=False, type=int, default=10
+        )
     configures = configures.parse_args()
 
     main(
@@ -198,5 +203,6 @@ if __name__ == '__main__':
         start_epoch=configures.start_epoch,
         learning_rate=configures.learning_rate,
         load_checkpoint=configures.load_checkpoint,
-        load_file=configures.load_file
+        load_file=configures.load_file,
+        save_rate=configures.save_rate
         )
